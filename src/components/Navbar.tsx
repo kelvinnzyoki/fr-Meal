@@ -22,7 +22,7 @@ export function Navbar() {
     <header className="sticky top-0 z-40 bg-ink text-cream">
       <div className="mx-auto max-w-5xl px-4 h-16 flex items-center justify-between">
         <Link href="/" className="font-display text-2xl font-extrabold tracking-tight text-marigold">
-          KulaGo
+          Mpishi254
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
