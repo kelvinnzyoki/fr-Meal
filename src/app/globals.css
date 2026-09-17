@@ -6,9 +6,31 @@
   color-scheme: light;
 }
 
+/* Belt-and-braces against horizontal overflow: nothing on the page should
+   ever be wider than the viewport, on any screen size. Tailwind's own
+   classes (max-w-*, truncate, min-w-0 on flex children) do the real work
+   per-component, but this catches anything that slips through — a long
+   unbroken string, an image without an explicit width constraint, etc. */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   background-color: #FBF6EC;
   color: #1C1A17;
+}
+
+img, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Any block of text that isn't inside a flex/grid item with its own
+   truncation still needs to be able to break long unbroken tokens (long
+   emails, reference codes, etc.) rather than force the page wider. */
+p, span, h1, h2, h3 {
+  overflow-wrap: break-word;
 }
 
 ::selection {
