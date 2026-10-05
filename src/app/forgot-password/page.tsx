@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
         {/* The backend answers identically whether or not the number is
             registered, so this copy must not claim a message was definitely sent. */}
         <p className="border-2 border-ink/10 rounded-card px-4 py-3 text-sm text-ink" role="status">
-          If that number is registered, we&apos;ve sent an SMS with instructions to reset your password. It expires in 30 minutes.
+          If that number is registered, we&apos;ve sent an Email with instructions to reset your password. It expires in 30 minutes.
         </p>
         <div className="mt-6 space-y-3 text-sm">
           <p className="text-stone">
