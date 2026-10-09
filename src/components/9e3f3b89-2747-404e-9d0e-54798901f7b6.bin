@@ -1,0 +1,136 @@
+"use client";
+
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+
+// Fill these in and they appear in the footer automatically.
+// Leave a value empty ("") to hide that line.
+const CONTACT = {
+  email: "",
+  phone: "",
+  instagram: "", // full URL, e.g. https://instagram.com/yourhandle
+  facebook: "",
+  tiktok: "",
+};
+
+const CATEGORIES = [
+  { label: "Kenyan Delicacies", slug: "kenyan-delicacies" },
+  { label: "Breakfast", slug: "breakfast" },
+  { label: "Lunch", slug: "lunch" },
+  { label: "Dinner", slug: "dinner" },
+  { label: "Drinks", slug: "drinks" },
+  { label: "Snacks", slug: "snacks" },
+];
+
+const linkClass = "text-sm font-light text-cream/60 transition-colors hover:text-marigold";
+const heading = "mb-4 text-[11px] uppercase tracking-[0.2em] text-marigold";
+
+export function Footer() {
+  const pathname = usePathname();
+
+  // Dashboards (vendor / rider / admin) are app screens, so no marketing footer.
+  const isAppShell =
+    pathname?.startsWith("/vendor") || pathname?.startsWith("/rider") || pathname?.startsWith("/admin");
+  if (isAppShell) return null;
+
+  const socials = [
+    { label: "Instagram", href: CONTACT.instagram },
+    { label: "Facebook", href: CONTACT.facebook },
+    { label: "TikTok", href: CONTACT.tiktok },
+  ].filter((s) => s.href);
+
+  return (
+    <footer className="relative bg-ink text-cream">
+      <div className="h-px bg-gradient-to-r from-transparent via-marigold/60 to-transparent" />
+
+      <div className="mx-auto max-w-5xl px-4 pt-14 pb-8">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          {/* Brand */}
+          <div className="sm:col-span-2 lg:col-span-1">
+            <Link href="/" aria-label="Mpishi254 home" className="inline-block">
+              <Image
+                src="/logo/mpishi254-logo.svg"
+                alt="Mpishi254"
+                width={180}
+                height={48}
+                unoptimized
+                className="h-11 w-auto"
+              />
+            </Link>
+            <p className="mt-5 max-w-xs text-sm font-light leading-relaxed text-cream/60">
+              Home-cooked Kenyan food from real kitchens, delivered hot to your door. Track every order from kitchen to
+              doorstep.
+            </p>
+            <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-cream/15 px-3.5 py-1.5 text-[11px] font-light tracking-[0.15em] text-cream/70">
+              <span className="h-1.5 w-1.5 rounded-full bg-sukuma" />
+              Pay with M-Pesa
+            </p>
+          </div>
+
+          {/* Explore */}
+          <div>
+            <h3 className={heading}>Explore</h3>
+            <ul className="space-y-3">
+              <li><Link href="/menu?todaysMenu=true" className={linkClass}>Today&apos;s menu</Link></li>
+              <li><Link href="/menu" className={linkClass}>Browse all food</Link></li>
+              <li><Link href="/orders" className={linkClass}>Track your order</Link></li>
+              <li><Link href="/cart" className={linkClass}>Your cart</Link></li>
+              <li><Link href="/login" className={linkClass}>Sign in</Link></li>
+            </ul>
+          </div>
+
+          {/* Categories */}
+          <div>
+            <h3 className={heading}>Categories</h3>
+            <ul className="space-y-3">
+              {CATEGORIES.map((c) => (
+                <li key={c.slug}>
+                  <Link href={`/menu?category=${c.slug}`} className={linkClass}>
+                    {c.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Get in touch */}
+          <div>
+            <h3 className={heading}>Get in touch</h3>
+            <ul className="space-y-3 text-sm font-light text-cream/60">
+              <li>Nairobi &amp; nearby, Kenya</li>
+              <li>Free delivery in select zones</li>
+              {CONTACT.email && (
+                <li><a href={`mailto:${CONTACT.email}`} className="break-all transition-colors hover:text-marigold">{CONTACT.email}</a></li>
+              )}
+              {CONTACT.phone && (
+                <li><a href={`tel:${CONTACT.phone.replace(/\s/g, "")}`} className="transition-colors hover:text-marigold">{CONTACT.phone}</a></li>
+              )}
+            </ul>
+            {socials.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {socials.map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-full border border-cream/15 px-3 py-1.5 text-xs font-light text-cream/70 transition-colors hover:border-marigold hover:text-marigold"
+                  >
+                    {s.label}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-cream/10 pt-6 text-xs font-light text-cream/40 sm:flex-row sm:items-center">
+          <p>© {new Date().getFullYear()} Mpishi254. All rights reserved.</p>
+          <p className="font-serif-accent italic text-sm text-cream/50">Cooked with care in Kenya</p>
+        </div>
+      </div>
+    </footer>
+  );
+}
