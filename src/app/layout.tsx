@@ -23,7 +23,7 @@ const serif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: "Mpishi254 — Kenyan food, delivered fast",
-  icons: { icon: "/logo/mpishi254-icon.svg", apple: "/logo/mpishi254-icon.png" },
+  icons: { icon: "/logo/mpishi254-icon.svg", apple: "/logo/mpishi254-icon.PNG" },
   description: "Order home-cooked Kenyan food and beverages, with free delivery in select zones. Track your order from the kitchen to your door.",
 };
 
