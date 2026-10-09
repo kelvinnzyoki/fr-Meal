@@ -7,8 +7,8 @@ import { usePathname } from "next/navigation";
 // Fill these in and they appear in the footer automatically.
 // Leave a value empty ("") to hide that line.
 const CONTACT = {
-  email: "",
-  phone: "",
+  email: "support@cctamcc.site",
+  phone: "0789574634",
   instagram: "", // full URL, e.g. https://instagram.com/yourhandle
   facebook: "",
   tiktok: "",
