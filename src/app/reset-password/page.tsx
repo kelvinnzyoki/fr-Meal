@@ -26,7 +26,7 @@ function ResetForm() {
 
     const token = (urlToken || code).trim();
     if (token.length < 10) {
-      setError("Enter the reset code from your SMS.");
+      setError("Enter the reset code from your email.");
       return;
     }
     if (password.length < 8) {
@@ -57,7 +57,7 @@ function ResetForm() {
           <input
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            placeholder="Reset code from your SMS"
+            placeholder="Reset code from your Email"
             autoComplete="one-time-code"
             autoCapitalize="none"
             spellCheck={false}
