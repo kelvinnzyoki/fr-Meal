@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+/* Belt-and-braces against horizontal overflow: nothing on the page should
+   ever be wider than the viewport, on any screen size. Tailwind's own
+   classes (max-w-*, truncate, min-w-0 on flex children) do the real work
+   per-component, but this catches anything that slips through — a long
+   unbroken string, an image without an explicit width constraint, etc. */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: #FBF6EC;
+  color: #1C1A17;
+}
+
+img, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Any block of text that isn't inside a flex/grid item with its own
+   truncation still needs to be able to break long unbroken tokens (long
+   emails, reference codes, etc.) rather than force the page wider. */
+p, span, h1, h2, h3 {
+  overflow-wrap: break-word;
+}
+
+::selection {
+  background-color: #F0A500;
+  color: #1C1A17;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid #F0A500;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Landing-page design utilities */
+.font-serif-accent {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.anim-up { animation: fade-up 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.anim-float { animation: float-y 6s ease-in-out infinite; }
+.anim-float-slow { animation: float-y 9s ease-in-out infinite; animation-delay: -3s; }
