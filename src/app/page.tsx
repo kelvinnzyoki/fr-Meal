@@ -80,7 +80,7 @@ export default function HomePage() {
           <div className="max-w-2xl">
             <p className={`inline-flex items-center gap-2 rounded-full border border-cream/15 px-3.5 py-1.5 text-marigold ${eyebrow}`}>
               <span className="h-1.5 w-1.5 rounded-full bg-marigold" />
-              Nairobi &amp; nearby · delivered hot
+              Kakamenga &amp; nearby · delivered hot
             </p>
 
             <h1 className="font-display font-light text-[2.6rem] sm:text-6xl md:text-7xl leading-[1.02] tracking-tight mt-7">
