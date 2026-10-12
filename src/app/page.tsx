@@ -99,12 +99,12 @@ export default function HomePage() {
               <Link href="/menu?todaysMenu=true" className="rounded-full border border-chromeFg/25 px-7 py-3 text-sm font-light tracking-wide text-chromeFg hover:border-accent hover:text-accent transition-colors">
                 Today&apos;s menu
               </Link>
-              <Link href="/orders" className="px-3 py-3 text-sm font-light text-chromeFg/70 hover:text-accent transition-colors">
+              <Link href="/orders" className="px-3 py-3 text-sm font-light text-chromeFg/80 hover:text-accent transition-colors">
                 Track order →
               </Link>
             </div>
 
-            <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-xs font-light tracking-wide text-chromeFg/60">
+            <ul className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-xs font-light tracking-wide text-chromeFg/80">
               <li>Free delivery in select zones</li>
               <li className="hidden sm:block text-chromeFg/20">|</li>
               <li>Pay with M-Pesa</li>
@@ -131,7 +131,7 @@ export default function HomePage() {
                   onClick={() => handleCategoryClick(c.slug)}
                   aria-current={isActive ? "true" : undefined}
                   className={`flex flex-shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-xs sm:text-sm transition-colors ${
-                    isActive ? "bg-ink font-medium text-marigold" : "font-light text-ink/70 hover:bg-ink/5 hover:text-ink"
+                    isActive ? "bg-ink font-medium text-marigold" : "font-light text-ink/80 hover:bg-ink/5 hover:text-ink"
                   }`}
                 >
                   <span className="text-base">{c.emoji}</span>
@@ -154,7 +154,7 @@ export default function HomePage() {
               Today&apos;s <em className="font-serif-accent italic">menu</em>
             </h2>
           </div>
-          <Link href="/menu?todaysMenu=true" className="flex-shrink-0 border-b border-ink/20 pb-0.5 text-sm font-light text-ink/70 transition-colors hover:border-chili hover:text-chili">
+          <Link href="/menu?todaysMenu=true" className="flex-shrink-0 border-b border-ink/20 pb-0.5 text-sm font-light text-ink/80 transition-colors hover:border-chili hover:text-chili">
             See all →
           </Link>
         </div>
@@ -211,4 +211,4 @@ export default function HomePage() {
       </section>
     </div>
   );
-}
+                }
