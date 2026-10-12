@@ -23,7 +23,7 @@ const CATEGORIES = [
   { label: "Snacks", slug: "snacks" },
 ];
 
-const linkClass = "text-sm font-light text-chromeFg/60 transition-colors hover:text-accent";
+const linkClass = "text-sm font-light text-chromeFg/80 transition-colors hover:text-accent";
 const heading = "mb-4 text-[11px] uppercase tracking-[0.2em] text-accent";
 
 export function Footer() {
@@ -66,11 +66,11 @@ export function Footer() {
                 className="logo-dark h-11 w-auto"
               />
             </Link>
-            <p className="mt-5 max-w-xs text-sm font-light leading-relaxed text-chromeFg/60">
+            <p className="mt-5 max-w-xs text-sm font-light leading-relaxed text-chromeFg/80">
               Home-cooked Kenyan food from real kitchens, delivered hot to your door. Track every order from kitchen to
               doorstep.
             </p>
-            <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-chromeFg/15 px-3.5 py-1.5 text-[11px] font-light tracking-[0.15em] text-chromeFg/70">
+            <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-chromeFg/15 px-3.5 py-1.5 text-[11px] font-light tracking-[0.15em] text-chromeFg/80">
               <span className="h-1.5 w-1.5 rounded-full bg-sukuma" />
               Pay with M-Pesa
             </p>
@@ -105,7 +105,7 @@ export function Footer() {
           {/* Get in touch */}
           <div>
             <h3 className={heading}>Get in touch</h3>
-            <ul className="space-y-3 text-sm font-light text-chromeFg/60">
+            <ul className="space-y-3 text-sm font-light text-chromeFg/80">
               <li>Nairobi &amp; nearby, Kenya</li>
               <li>Free delivery in select zones</li>
               {CONTACT.email && (
@@ -123,7 +123,7 @@ export function Footer() {
                     href={s.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-full border border-chromeFg/15 px-3 py-1.5 text-xs font-light text-chromeFg/70 transition-colors hover:border-accent hover:text-accent"
+                    className="rounded-full border border-chromeFg/15 px-3 py-1.5 text-xs font-light text-chromeFg/80 transition-colors hover:border-accent hover:text-accent"
                   >
                     {s.label}
                   </a>
@@ -134,9 +134,9 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-chromeFg/10 pt-6 text-xs font-light text-chromeFg/40 sm:flex-row sm:items-center">
+        <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-chromeFg/10 pt-6 text-xs font-light text-chromeFg/65 sm:flex-row sm:items-center">
           <p>© {new Date().getFullYear()} Mpishi254. All rights reserved.</p>
-          <p className="font-serif-accent italic text-sm text-chromeFg/50">Cooked with care in Kenya</p>
+          <p className="font-serif-accent italic text-sm text-chromeFg/80">Cooked with care in Kenya</p>
         </div>
       </div>
     </footer>
