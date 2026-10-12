@@ -18,7 +18,7 @@ html, body {
 
 /* Theme tokens (space-separated RGB so Tailwind can apply alpha) */
 :root {
-  --color-page: 251 246 236;
+  --color-page: 255 255 255; /* pure light, no cream/yellow cast */
   --color-fg: 28 26 23;
   --color-card: 255 255 255;
   --color-stone: 138 131 117;
@@ -113,7 +113,7 @@ html.dark { color-scheme: dark; }
 
 .dark :where(.bg-cream) { background-color: rgb(var(--color-card)); }
 .dark :where(.text-ink) { color: #FBF6EC; }
-.dark :where([class*="text-ink/"]) { color: rgb(251 246 236 / 0.72); }
+.dark :where([class*="text-ink/"]) { color: rgb(251 246 236 / 0.85); }
 .dark .hover\:text-ink:hover { color: #FBF6EC; }
 .dark :where([class*="border-ink"]) { border-color: rgb(251 246 236 / 0.12); }
 .dark .hover\:bg-ink\/5:hover { background-color: rgb(251 246 236 / 0.07); }
