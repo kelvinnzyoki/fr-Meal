@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import type { Address } from "@/types";
 import { account } from "@/lib/account";
+import { AddressListSkeleton } from "@/components/Skeletons";
 import { Button, Card, Field, Notice, errorText, type Status } from "./ui";
 
 const optional = (v: string) => (v.trim() ? v.trim() : undefined);
@@ -63,7 +64,7 @@ export function AddressesSection() {
   return (
     <Card title="Saved addresses" description="Places you order to. Your default is used first at checkout.">
       {addresses === null ? (
-        <p className="text-sm text-stone">Loading…</p>
+        <AddressListSkeleton />
       ) : sorted.length === 0 && !adding ? (
         <p className="text-sm text-stone">You haven&apos;t saved an address yet.</p>
       ) : (
@@ -130,7 +131,7 @@ export function AddressesSection() {
             }}
           />
         ) : (
-          <Button variant="secondary" onClick={() => { setStatus(null); setAdding(true); }}>
+          <Button variant="secondary" onClick={() => { setStatus(null); setAdding(true); }} disabled={addresses === null}>
             Add address
           </Button>
         )}
