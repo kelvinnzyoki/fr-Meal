@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Both schemes are genuinely supported, so declare that explicitly. This stops
+   mobile browsers that auto-dark unsupported pages (e.g. Android Chrome's
+   "Force Dark") from falling back to algorithmic colour inversion, which made
+   translucent, blurred elements like the checkout sticky bar unreadable.
+   The scheme follows the app's own theme (the .dark class set by ThemeScript
+   / ThemeToggle) rather than the OS setting, so native controls (inputs,
+   scrollbars) always match the theme the visitor actually chose. */
+:root {
+  color-scheme: only light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+/* Belt-and-braces against horizontal overflow: nothing on the page should
+   ever be wider than the viewport, on any screen size. Tailwind's own
+   classes (max-w-*, truncate, min-w-0 on flex children) do the real work
+   per-component, but this catches anything that slips through — a long
+   unbroken string, an image without an explicit width constraint, etc. */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Theme tokens (space-separated RGB so Tailwind can apply alpha) */
+:root {
+  --color-page: 255 255 255; /* pure light, no cream/yellow cast */
+  --color-fg: 28 26 23;
+  --color-card: 255 255 255;
+  --color-stone: 138 131 117;
+  --color-chrome: 255 253 248;
+  --color-chrome-fg: 28 26 23;
+  --color-accent: 201 127 0;
+}
+.dark {
+  --color-page: 18 16 14;
+  --color-fg: 251 246 236;
+  --color-card: 29 26 22;
+  --color-stone: 168 159 146;
+  --color-chrome: 28 26 23;
+  --color-chrome-fg: 251 246 236;
+  --color-accent: 240 165 0;
+}
+
+body {
+  background-color: rgb(var(--color-page));
+  color: rgb(var(--color-fg));
+}
+
+img, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Any block of text that isn't inside a flex/grid item with its own
+   truncation still needs to be able to break long unbroken tokens (long
+   emails, reference codes, etc.) rather than force the page wider. */
+p, span, h1, h2, h3 {
+  overflow-wrap: break-word;
+}
+
+::selection {
+  background-color: #F0A500;
+  color: #1C1A17;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid #F0A500;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Landing-page design utilities */
+.font-serif-accent {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.anim-up { animation: fade-up 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.anim-float { animation: float-y 6s ease-in-out infinite; }
+.anim-float-slow { animation: float-y 9s ease-in-out infinite; animation-delay: -3s; }
+
+/* ---------- Theme toggle icons (pure CSS, so no hydration mismatch) ---------- */
+.theme-icon-sun { display: none; }
+.dark .theme-icon-sun { display: block; }
+.dark .theme-icon-moon { display: none; }
+@keyframes theme-pop {
+  from { opacity: 0; transform: rotate(-70deg) scale(0.5); }
+  to { opacity: 1; transform: none; }
+}
+.theme-icon-sun, .theme-icon-moon { animation: theme-pop 0.35s ease both; }
+
+/* ---------- Dark mode ----------
+   Surfaces (white) and muted text (stone) flip through the CSS variables
+   above. ink/cream are dual-role (text AND dark surfaces), so their text/
+   border roles are remapped here. :where() keeps specificity low so hover
+   utilities still win. */
+body { transition: background-color 0.25s ease, color 0.25s ease; }
+
+.dark :where(.bg-cream) { background-color: rgb(var(--color-card)); }
+.dark :where(.text-ink) { color: #FBF6EC; }
+.dark :where([class*="text-ink/"]) { color: rgb(251 246 236 / 0.85); }
+.dark .hover\:text-ink:hover { color: #FBF6EC; }
+.dark :where([class*="border-ink"]) { border-color: rgb(251 246 236 / 0.12); }
+.dark .hover\:bg-ink\/5:hover { background-color: rgb(251 246 236 / 0.07); }
+
+/* keep dark text on marigold buttons/badges */
+.dark .bg-marigold.text-ink,
+.dark .bg-marigoldDark.text-ink { color: #1C1A17; }
+
+/* "ink" pills would vanish on dark surfaces, so give them a visible tone */
+.dark .bg-ink.text-marigold { background-color: rgb(240 165 0 / 0.16); }
+.dark button.bg-ink.text-cream { background-color: #3A342B; }
+
+/* Logo variants: light-mode file by default, dark-mode file under .dark
+   (CSS-only swap, so there's no hydration mismatch or flash). */
+.logo-dark { display: none; }
+.dark .logo-light { display: none; }
+.dark .logo-dark { display: block; }
