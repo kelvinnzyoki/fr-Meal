@@ -17,6 +17,15 @@ const PAYMENT_FAILURE: Record<string, string> = {
   TIMEOUT: "The M-Pesa prompt timed out before it was confirmed.",
 };
 
+// Escalating reassurance while we poll — a static "check your phone" for up
+// to 90 seconds with nothing moving reads as frozen, not working.
+function waitingMessage(elapsedSeconds: number): string {
+  if (elapsedSeconds < 15) return "Waiting for you to enter your M-Pesa PIN…";
+  if (elapsedSeconds < 35) return "Still checking — this can take a little longer on a slow connection…";
+  if (elapsedSeconds < 60) return "Still waiting for M-Pesa to confirm the payment…";
+  return "This is taking longer than usual. Hang tight — we'll keep checking.";
+}
+
 export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
   const { cart, loading: cartLoading, refreshCart } = useCart();
@@ -27,6 +36,7 @@ export default function CheckoutPage() {
   const [showNewAddress, setShowNewAddress] = useState(false);
   const [newAddress, setNewAddress] = useState({ label: "Home", building: "", area: "", landmark: "", latitude: 0, longitude: 0 });
   const [locating, setLocating] = useState(false);
+  const [addressError, setAddressError] = useState("");
 
   const [phone, setPhone] = useState("");
   const [forSomeoneElse, setForSomeoneElse] = useState(false);
@@ -42,6 +52,7 @@ export default function CheckoutPage() {
   // true, the cart being empty is EXPECTED (checkout clears it server-side)
   // and must never again be treated as "nothing to check out".
   const [order, setOrder] = useState<Order | null>(null);
+  const [waitingSeconds, setWaitingSeconds] = useState(0);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   function stopPolling() {
@@ -51,6 +62,15 @@ export default function CheckoutPage() {
     }
   }
   useEffect(() => stopPolling, []);
+
+  // Ticks the "still waiting" counter once a second while we're polling, so
+  // the message on screen can change instead of sitting static.
+  useEffect(() => {
+    if (stage !== "awaiting-payment") return;
+    setWaitingSeconds(0);
+    const t = setInterval(() => setWaitingSeconds((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [stage]);
 
   // Every result screen (waiting / success / failed) starts at the top so it
   // can't be left hidden below the fold of a long form.
@@ -79,6 +99,7 @@ export default function CheckoutPage() {
 
   function captureLocation() {
     setLocating(true);
+    setAddressError("");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setNewAddress((a) => ({ ...a, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
@@ -86,24 +107,33 @@ export default function CheckoutPage() {
       },
       () => {
         setLocating(false);
-        setError("We couldn't read your location. Allow location access in your browser and try again.");
+        setAddressError("We couldn't read your location. Allow location access in your browser and try again.");
       }
     );
   }
 
   async function saveNewAddress() {
+    // Guards against the exact "have to click twice" report: getting a GPS
+    // fix can take several seconds, and the old version let a tap on Save
+    // silently no-op (with the only feedback stuck down in the page-level
+    // error, far from this form) while a location was still being read.
+    // Disabling the button below stops the tap from doing nothing in the
+    // first place; this stays as a second line of defence.
+    if (locating) return;
     if (!newAddress.latitude || !newAddress.longitude) {
-      setError("Tap \"Use my current location\" so we know where to deliver.");
+      setAddressError('Tap "Use my current location" first so we know where to deliver.');
       return;
     }
+    setAddressError("");
     setError("");
     try {
       const created = await api.post<Address>("/users/me/addresses", { ...newAddress, isDefault: addresses.length === 0 });
       setAddresses((a) => [created, ...a]);
       setAddressId(created.id);
       setShowNewAddress(false);
+      setNewAddress({ label: "Home", building: "", area: "", landmark: "", latitude: 0, longitude: 0 });
     } catch (err) {
-      setError(friendlyError(err));
+      setAddressError(friendlyError(err));
     }
   }
 
@@ -207,19 +237,23 @@ export default function CheckoutPage() {
     return sum + (Number(i.foodItem.basePrice) + variationTotal) * i.quantity;
   }, 0);
   const orderTotal = order ? Number(order.total).toLocaleString() : "";
+  // order.id is always set by this point in the flow (it comes straight off
+  // the checkout response and is never cleared afterwards) — this is just a
+  // defensive guard so a button can never render pointing at a broken URL.
+  const trackHref = order?.id ? `/orders/${order.id}` : "/orders";
 
   if (stage === "awaiting-payment") {
     return (
-      <div role="status" className="max-w-md mx-auto px-4 py-20 text-center">
-        <div className="text-5xl mb-4 animate-pulse">📱</div>
-        <h1 className="font-display text-2xl font-bold text-ink mb-2">Check your phone</h1>
+      <div role="status" aria-live="polite" className="max-w-md mx-auto px-4 py-20 text-center">
+        <div className="mx-auto mb-5 h-14 w-14 animate-spin rounded-full border-4 border-marigold/25 border-t-marigold" />
+        <h1 className="font-display text-2xl font-bold text-ink dark:text-cream mb-2">Check your phone</h1>
         <p className="text-stone break-words">
           We&apos;ve sent an M-Pesa prompt to <strong>{phone}</strong>. Enter your PIN to complete payment of{" "}
           <strong>KES {orderTotal}</strong>.
         </p>
-        <p className="text-xs text-stone mt-4">This page will update automatically once payment is confirmed.</p>
+        <p className="mt-4 text-sm font-semibold text-marigoldDark">{waitingMessage(waitingSeconds)}</p>
         {order && (
-          <Link href={`/orders/${order.id}`} className="inline-block mt-6 text-sm font-semibold text-chili hover:underline">
+          <Link href={trackHref} className="inline-block mt-6 text-sm font-semibold text-chili hover:underline">
             View my order
           </Link>
         )}
@@ -231,20 +265,20 @@ export default function CheckoutPage() {
     return (
       <div role="status" className="max-w-md mx-auto px-4 py-16 text-center">
         <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-sukuma/15 text-4xl text-sukuma">✓</div>
-        <h1 className="font-display text-2xl font-extrabold text-ink mb-2">Payment successful!</h1>
+        <h1 className="font-display text-2xl font-extrabold text-ink dark:text-cream mb-2">Payment successful!</h1>
         <p className="text-stone">
-          Order <strong className="text-ink break-all">{order.orderNumber}</strong> is confirmed. The kitchen has been notified and will start
+          Order <strong className="text-ink dark:text-cream break-all">{order.orderNumber}</strong> is confirmed. The kitchen has been notified and will start
           preparing it.
         </p>
         <p className="mt-3 font-display text-xl font-bold text-chili">KES {orderTotal}</p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <button
-            onClick={() => router.push(`/orders/${order.id}`)}
+          <Link
+            href={trackHref}
             className="bg-marigold text-ink font-bold px-6 py-3 rounded-card hover:bg-marigoldDark transition-colors"
           >
             Track my order
-          </button>
-          <Link href="/menu" className="border-2 border-ink/10 text-ink font-semibold px-6 py-3 rounded-card hover:border-marigold transition-colors">
+          </Link>
+          <Link href="/menu" className="border-2 border-ink/10 dark:border-cream/20 text-ink dark:text-cream font-semibold px-6 py-3 rounded-card hover:border-marigold transition-colors">
             Keep browsing
           </Link>
         </div>
@@ -256,15 +290,15 @@ export default function CheckoutPage() {
     return (
       <div role="alert" className="max-w-md mx-auto px-4 py-16 text-center">
         <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-chili/10 text-4xl text-chili">✕</div>
-        <h1 className="font-display text-2xl font-extrabold text-ink mb-2">Payment unsuccessful</h1>
+        <h1 className="font-display text-2xl font-extrabold text-ink dark:text-cream mb-2">Payment unsuccessful</h1>
         <p className="text-chili break-words">{failureReason || "Something went wrong with the payment."}</p>
         <p className="text-stone text-sm mt-3">
-          Your order <strong className="text-ink break-all">{order.orderNumber}</strong> is saved — you won&apos;t lose it. Try again below
+          Your order <strong className="text-ink dark:text-cream break-all">{order.orderNumber}</strong> is saved — you won&apos;t lose it. Try again below
           or pay later from your orders.
         </p>
 
         <div className="mt-6 text-left">
-          <label htmlFor="retry-phone" className="block text-xs font-semibold text-ink mb-1">M-Pesa phone number</label>
+          <label htmlFor="retry-phone" className="block text-xs font-semibold text-ink dark:text-cream mb-1">M-Pesa phone number</label>
           <input
             id="retry-phone"
             type="tel"
@@ -272,7 +306,7 @@ export default function CheckoutPage() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="07XXXXXXXX"
-            className="w-full border-2 border-ink/10 rounded-card px-4 py-3 focus-ring"
+            className="w-full border-2 border-ink/10 dark:border-cream/20 dark:bg-cream/5 dark:text-cream rounded-card px-4 py-3 focus-ring"
           />
         </div>
 
@@ -283,7 +317,7 @@ export default function CheckoutPage() {
           >
             Try payment again
           </button>
-          <Link href={`/orders/${order.id}`} className="w-full border-2 border-ink/10 text-ink font-semibold py-3 rounded-card hover:border-marigold transition-colors">
+          <Link href={trackHref} className="w-full border-2 border-ink/10 dark:border-cream/20 text-ink dark:text-cream font-semibold py-3 rounded-card hover:border-marigold transition-colors">
             View my order
           </Link>
         </div>
@@ -297,24 +331,24 @@ export default function CheckoutPage() {
           viewport so it is always visible, however far down the form is. */}
       {stage === "placing" && (
         <div role="status" aria-live="assertive" className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/70 px-6 backdrop-blur-sm">
-          <div className="w-full max-w-xs rounded-2xl bg-white p-6 text-center shadow-2xl">
+          <div className="w-full max-w-xs rounded-2xl bg-white dark:bg-ink dark:border dark:border-cream/15 p-6 text-center shadow-2xl">
             <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-marigold/30 border-t-marigold" />
-            <p className="font-display text-lg font-bold text-ink">Placing your order…</p>
+            <p className="font-display text-lg font-bold text-ink dark:text-cream">Placing your order…</p>
             <p className="mt-1 text-sm text-stone">Please keep this page open.</p>
           </div>
         </div>
       )}
 
-      <h1 className="font-display text-3xl font-extrabold text-ink mb-6">Checkout</h1>
+      <h1 className="font-display text-3xl font-extrabold text-ink dark:text-cream mb-6">Checkout</h1>
 
       <section className="mb-6">
-        <h2 className="font-display font-bold text-ink mb-2">Delivery address</h2>
+        <h2 className="font-display font-bold text-ink dark:text-cream mb-2">Delivery address</h2>
         <div className="space-y-2">
           {addresses.map((a) => (
-            <label key={a.id} className={`flex gap-3 p-3 border-2 rounded-card cursor-pointer ${addressId === a.id ? "border-marigold" : "border-ink/10"}`}>
+            <label key={a.id} className={`flex gap-3 p-3 border-2 rounded-card cursor-pointer ${addressId === a.id ? "border-marigold" : "border-ink/10 dark:border-cream/20"}`}>
               <input type="radio" name="address" checked={addressId === a.id} onChange={() => setAddressId(a.id)} className="mt-1" />
               <span className="min-w-0">
-                <span className="font-semibold text-ink">{a.label}</span>
+                <span className="font-semibold text-ink dark:text-cream">{a.label}</span>
                 <br />
                 <span className="text-sm text-stone break-words">{[a.building, a.area, a.city].filter(Boolean).join(", ")}</span>
               </span>
@@ -327,59 +361,74 @@ export default function CheckoutPage() {
             + Add a new address
           </button>
         ) : (
-          <div className="mt-3 p-4 border-2 border-ink/10 rounded-card space-y-3">
-            <input placeholder="Label (e.g. Home, Office)" value={newAddress.label} onChange={(e) => setNewAddress((a) => ({ ...a, label: e.target.value }))} className="w-full border-2 border-ink/10 rounded-card px-3 py-2 focus-ring" />
-            <input placeholder="Building / house no." value={newAddress.building} onChange={(e) => setNewAddress((a) => ({ ...a, building: e.target.value }))} className="w-full border-2 border-ink/10 rounded-card px-3 py-2 focus-ring" />
-            <input placeholder="Area (e.g. Kilimani)" value={newAddress.area} onChange={(e) => setNewAddress((a) => ({ ...a, area: e.target.value }))} className="w-full border-2 border-ink/10 rounded-card px-3 py-2 focus-ring" />
-            <input placeholder="Landmark (optional)" value={newAddress.landmark} onChange={(e) => setNewAddress((a) => ({ ...a, landmark: e.target.value }))} className="w-full border-2 border-ink/10 rounded-card px-3 py-2 focus-ring" />
-            <button type="button" onClick={captureLocation} className="text-sm font-semibold text-chili hover:underline">
-              {locating ? "Locating…" : newAddress.latitude ? "✓ Location captured" : "📍 Use my current location"}
-            </button>
-            <div className="flex gap-2">
-              <button onClick={saveNewAddress} className="bg-marigold text-ink font-bold px-4 py-2 rounded-card hover:bg-marigoldDark transition-colors">
-                Save address
+          <div className="mt-3 p-4 border-2 border-ink/10 dark:border-cream/20 rounded-card space-y-3">
+            <input placeholder="Label (e.g. Home, Office)" value={newAddress.label} onChange={(e) => setNewAddress((a) => ({ ...a, label: e.target.value }))} className="w-full border-2 border-ink/10 dark:border-cream/20 dark:bg-cream/5 dark:text-cream rounded-card px-3 py-2 focus-ring" />
+            <input placeholder="Building / house no." value={newAddress.building} onChange={(e) => setNewAddress((a) => ({ ...a, building: e.target.value }))} className="w-full border-2 border-ink/10 dark:border-cream/20 dark:bg-cream/5 dark:text-cream rounded-card px-3 py-2 focus-ring" />
+            <input placeholder="Area (e.g. Kilimani)" value={newAddress.area} onChange={(e) => setNewAddress((a) => ({ ...a, area: e.target.value }))} className="w-full border-2 border-ink/10 dark:border-cream/20 dark:bg-cream/5 dark:text-cream rounded-card px-3 py-2 focus-ring" />
+            <input placeholder="Landmark (optional)" value={newAddress.landmark} onChange={(e) => setNewAddress((a) => ({ ...a, landmark: e.target.value }))} className="w-full border-2 border-ink/10 dark:border-cream/20 dark:bg-cream/5 dark:text-cream rounded-card px-3 py-2 focus-ring" />
+
+            <div>
+              <button type="button" onClick={captureLocation} disabled={locating} className="text-sm font-semibold text-chili hover:underline disabled:opacity-60">
+                {locating ? "Locating…" : newAddress.latitude ? "✓ Location captured" : "📍 Use my current location"}
               </button>
-              <button onClick={() => setShowNewAddress(false)} className="text-stone font-semibold px-4 py-2">Cancel</button>
+              {!newAddress.latitude && !locating && (
+                <p className="text-xs text-stone mt-1">Required before saving — this is how we know where to deliver.</p>
+              )}
+            </div>
+
+            {addressError && <p role="alert" className="text-sm text-chili break-words">{addressError}</p>}
+
+            <div className="flex gap-2">
+              <button
+                onClick={saveNewAddress}
+                disabled={locating || !newAddress.latitude}
+                className="bg-marigold text-ink font-bold px-4 py-2 rounded-card hover:bg-marigoldDark transition-colors disabled:opacity-50"
+              >
+                {locating ? "Locating…" : "Save address"}
+              </button>
+              <button onClick={() => { setShowNewAddress(false); setAddressError(""); }} className="text-stone font-semibold px-4 py-2">Cancel</button>
             </div>
           </div>
         )}
       </section>
 
       <section className="mb-6">
-        <h2 className="font-display font-bold text-ink mb-2">M-Pesa phone number</h2>
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07XXXXXXXX" className="w-full border-2 border-ink/10 rounded-card px-4 py-3 focus-ring" />
+        <h2 className="font-display font-bold text-ink dark:text-cream mb-2">M-Pesa phone number</h2>
+        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07XXXXXXXX" className="w-full border-2 border-ink/10 dark:border-cream/20 dark:bg-cream/5 dark:text-cream rounded-card px-4 py-3 focus-ring" />
       </section>
 
       <section className="mb-6">
-        <label className="flex items-center gap-2 font-semibold text-ink cursor-pointer">
+        <label className="flex items-center gap-2 font-semibold text-ink dark:text-cream cursor-pointer">
           <input type="checkbox" checked={forSomeoneElse} onChange={(e) => setForSomeoneElse(e.target.checked)} />
           Order for someone else
         </label>
         {forSomeoneElse && (
           <div className="mt-3 space-y-2">
-            <input placeholder="Recipient's name" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} className="w-full border-2 border-ink/10 rounded-card px-4 py-3 focus-ring" />
-            <input placeholder="Recipient's phone" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} className="w-full border-2 border-ink/10 rounded-card px-4 py-3 focus-ring" />
+            <input placeholder="Recipient's name" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} className="w-full border-2 border-ink/10 dark:border-cream/20 dark:bg-cream/5 dark:text-cream rounded-card px-4 py-3 focus-ring" />
+            <input placeholder="Recipient's phone" value={recipientPhone} onChange={(e) => setRecipientPhone(e.target.value)} className="w-full border-2 border-ink/10 dark:border-cream/20 dark:bg-cream/5 dark:text-cream rounded-card px-4 py-3 focus-ring" />
           </div>
         )}
       </section>
 
       <section className="mb-6">
-        <h2 className="font-display font-bold text-ink mb-2">Coupon code</h2>
-        <input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="Optional" className="w-full border-2 border-ink/10 rounded-card px-4 py-3 focus-ring" />
+        <h2 className="font-display font-bold text-ink dark:text-cream mb-2">Coupon code</h2>
+        <input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="Optional" className="w-full border-2 border-ink/10 dark:border-cream/20 dark:bg-cream/5 dark:text-cream rounded-card px-4 py-3 focus-ring" />
       </section>
 
       <section className="mb-6">
-        <h2 className="font-display font-bold text-ink mb-2">Special instructions</h2>
-        <textarea value={specialInstructions} onChange={(e) => setSpecialInstructions(e.target.value)} rows={2} className="w-full border-2 border-ink/10 rounded-card px-4 py-3 focus-ring" />
+        <h2 className="font-display font-bold text-ink dark:text-cream mb-2">Special instructions</h2>
+        <textarea value={specialInstructions} onChange={(e) => setSpecialInstructions(e.target.value)} rows={2} className="w-full border-2 border-ink/10 dark:border-cream/20 dark:bg-cream/5 dark:text-cream rounded-card px-4 py-3 focus-ring" />
       </section>
 
       <p className="text-xs text-stone mb-2">Delivery fee (or free-delivery status) and any coupon discount are applied when you place the order.</p>
 
       {/* Sticky bar: total, any error, and the button stay on screen while the
-          form scrolls, so feedback can never end up hidden below the fold. */}
-      <div className="sticky bottom-0 -mx-4 border-t-2 border-ink/10 bg-cream/95 px-4 pb-4 pt-3 backdrop-blur">
+          form scrolls, so feedback can never end up hidden below the fold.
+          Fully opaque (not translucent) and explicitly themed for both modes
+          — this is the section that was unreadable under forced dark mode. */}
+      <div className="sticky bottom-0 -mx-4 border-t-2 border-ink/10 dark:border-cream/15 bg-cream dark:bg-ink px-4 pb-4 pt-3">
         <div className="mb-3 flex items-center justify-between">
-          <span className="font-display text-lg font-bold text-ink">Subtotal</span>
+          <span className="font-display text-lg font-bold text-ink dark:text-cream">Subtotal</span>
           <span className="font-display text-lg font-bold text-chili">KES {subtotal.toLocaleString()}</span>
         </div>
         {error && <p role="alert" className="mb-3 rounded-card bg-chili/10 px-3 py-2 text-sm text-chili break-words">{error}</p>}
