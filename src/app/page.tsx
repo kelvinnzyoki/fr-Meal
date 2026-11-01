@@ -124,7 +124,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="relative overflow-hidden bg-chrome text-chromeFg">
         {/* Background image + dark overlay so the text stays readable */}
-        <Image src="/image.jpeg" alt="" fill priority sizes="100vw" className="object-cover" />
+        <Image src="/image.png" alt="" fill priority sizes="100vw" className="object-cover" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-chrome/90 via-chrome/70 to-chrome/40" />
 
         <div className="relative max-w-5xl mx-auto px-4 pt-14 pb-28 md:pt-24 md:pb-36">
