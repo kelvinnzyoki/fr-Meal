@@ -10,6 +10,11 @@
  *   301 – 500            +70
  *   501 and above        +80
  *
+ * The admin can override the FINAL customer price of any item
+ * (FoodItem.customerPriceOverride). Use finalCustomerPrice(item) anywhere an
+ * item is priced for a customer; customerPrice(number) is only the automatic
+ * tier markup.
+ *
  * Keep ONE copy of this logic authoritative on the backend
  * (src/utils/pricing.ts). The frontend copy is only for previews.
  */
@@ -28,7 +33,26 @@ export function platformMarkup(vendorPrice: number): number {
   return PRICE_TIERS.find((t) => vendorPrice <= t.max)!.markup;
 }
 
-/** What the customer pays for one unit priced at `vendorPrice`. */
+/** What the customer pays for one unit priced at `vendorPrice` (automatic markup only). */
 export function customerPrice(vendorPrice: number): number {
   return vendorPrice + platformMarkup(vendorPrice);
+}
+
+/**
+ * What the customer actually pays for one unit of a food item.
+ * An admin override (customerPriceOverride) wins, unless it is invalid or
+ * below the vendor's price (e.g. the vendor raised their price after the
+ * override was set), in which case the automatic tier markup applies.
+ * Accepts Prisma Decimals, numbers or numeric strings.
+ */
+export function finalCustomerPrice(item: {
+  basePrice: unknown;
+  customerPriceOverride?: unknown;
+}): number {
+  const base = Number(item.basePrice);
+  if (item.customerPriceOverride != null) {
+    const override = Number(item.customerPriceOverride);
+    if (Number.isFinite(override) && override > 0 && override >= base) return override;
+  }
+  return customerPrice(base);
 }
