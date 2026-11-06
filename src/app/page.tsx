@@ -163,7 +163,7 @@ export default function HomePage() {
           <p className="anim-up inline-flex max-w-full items-center gap-2 whitespace-nowrap rounded-full border border-chromeFg/15 bg-white/50 px-3.5 py-2 text-[10px] font-medium uppercase leading-none tracking-[0.14em] text-accent sm:text-[11px] sm:tracking-[0.2em]">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-marigold" aria-hidden="true" />
             <span>
-              Kakamenga &amp; nearby
+              Kakamenga Town &amp; nearby
               <span className="hidden min-[360px]:inline"> · delivered hot</span>
             </span>
           </p>
