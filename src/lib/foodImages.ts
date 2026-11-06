@@ -38,4 +38,5 @@ export const FOOD_IMAGE_OPTIONS: FoodImageOption[] = [
   { path: "/images/food/kukuchoma.webp", label: "Kuku Choma" },
   { path: "/images/food/nyamachoma.webp", label: "Nyama Choma" },
   { path: "/images/food/githeri.webp", label: "Githeri" },
+  { path: "/images/food/dawa.webp", label: "Dawa Drink" },
 ];
